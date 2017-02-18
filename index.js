@@ -1,6 +1,10 @@
 (function($) {
 	$(function(){
 
+		//todo
+		//1. fix fast clicking bugs
+		//2. see if translate3d works better for grid transforms than top, left
+
 		var $window = $(window);
 		var $body = $('body');
 		var $grid = $('.grid');
@@ -26,7 +30,7 @@
 		function openBox($box){
 			if($selectedBox)
 			{
-				if($selectedBox.is($box)){ closeBox($box); }
+				if($selectedBox.is($box)){ closeBox($box); return; }
 				closeBox($selectedBox);
 				openBox($box);
 			}else{
@@ -46,12 +50,13 @@
 		}
 
 		function closeBox($box){
+			
 			$grid.animate({
 				top: 0,
 				left: 0,
 				width: $grid.width()/$grid.data('scale'),
 				height: $grid.height()/$grid.data('scale')
-			}, 800, 'easeOutElastic', function(){
+			}, 1000, 'easeOutElastic', function(){
 				$grid.css({ width: "100%", height: "auto" });
 			});
 
