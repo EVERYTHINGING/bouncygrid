@@ -7,68 +7,95 @@
 
 		var $window = $(window);
 		var $body = $('body');
-		var $grid = $('.grid');
 		
 		var boxMultipleWidth = $window.width()/$('.box').first().outerWidth();
 		var boxMultipleHeight = $window.height()/$('.box').first().outerHeight();
 		var openScale = 0.95;
 		var scale = openScale*boxMultipleWidth;
 
-		var $selectedBox = null;
-
 		$('.box').each(function(index, value){
+			var $box = $(this);
 			var rgb = [255, Math.floor(Math.random()*255), Math.floor(Math.random()*255)];
 			rgb.sort(function() { return 0.5 - Math.random() });
 
-			$(this).css({'background-color': 'rgb('+rgb[0]+', '+rgb[1]+', '+rgb[2]+')'});
+			$box.css({'background-color': 'rgb('+rgb[0]+', '+rgb[1]+', '+rgb[2]+')'});
+			$box.attr('id', 'box-'+index);
 		});
 
-		$('.box').click(function(){
+		$('.box').click(function(e){
+			e.stopPropagation();
 			openBox($(this));
 		});
 
 		function openBox($box){
-			if($selectedBox)
+			var $grid = $box.parent('.grid');
+
+			if($grid.data('selected-box'))
 			{
+				var $selectedBox = $('#'+$grid.data('selected-box'));
+
 				if($selectedBox.is($box)){ closeBox($box); return; }
 				closeBox($selectedBox);
 				openBox($box);
 			}else{
+				var $viewport = $grid.parents('.box').eq(0);
+				var viewportOffsetTop = 0;
+				var viewportOffsetLeft = 0;
+
+				if($viewport.length == 0){ 
+					$viewport = $window;
+				}else{
+					viewportOffsetTop = $viewport.offset().top;
+					viewportOffsetLeft = $viewport.offset().left;
+				}
+
+				console.log(viewportOffsetTop, viewportOffsetLeft);
+
 				$grid.data('scale', scale);
 				$grid.stop(true, true).animate({
-					top: (((-1*($box.offset().top))*scale)+$window.scrollTop()) + (($window.height()-($box.outerHeight()*scale))/2),
-					left: ((-1*($box.offset().left))*scale)+(($window.width() - ($box.outerWidth()*scale))/2),
+					top: (((-1*($box.offset().top))*scale)+$viewport.scrollTop()) + (($viewport.height()-($box.outerHeight()*scale))/2) + viewportOffsetTop,
+					left: (((-1*($box.offset().left))*scale)+(($viewport.width() - ($box.outerWidth()*scale))/2)) + viewportOffsetLeft,
 					width: $grid.width()*scale,
 					height: $grid.height()*scale
 				}, 600, 'easeOutElastic');
 
 
-				$selectedBox = $box;
+				$grid.data('selected-box', $box.attr('id'));
 				$box.addClass('open');
 				$body.css({ overflow: 'hidden' });	
+
+				if($box.find('.grid').length){
+					$grid.removeClass('active');
+					$box.find('.grid').addClass('active');
+				}
 			}
 		}
 
 		function closeBox($box){
+			var $grid = $box.parent('.grid');
 			
 			$grid.animate({
 				top: 0,
 				left: 0,
 				width: $grid.width()/$grid.data('scale'),
 				height: $grid.height()/$grid.data('scale')
-			}, 1000, 'easeOutElastic', function(){
+			}, 800, 'easeOutElastic', function(){
 				$grid.css({ width: "100%", height: "auto" });
 			});
 
-			$selectedBox = null;
+			$grid.data('selected-box', null);
 			$box.removeClass('open');
+			$grid.removeClass('active');
 
-			$body.css({ overflow: 'auto' });	
+			if($grid.parents('.grid').length == 0){
+				$body.css({ overflow: 'auto' });
+				$grid.addClass('active');
+			}
 		}
 
 		$('.project__close-btn').click(function(e){
 			e.stopPropagation();
-			closeBox($(this).parents('.box'));
+			closeBox($(this).parents('.box').eq(0));
 		});
 
 		
@@ -78,8 +105,6 @@
 			if($window.width() > $window.height()){
 				scale = boxMultipleHeight*openScale;
 			}
-
-			if($selectedBox){ openBox($selectedBox); }
 		}
 
 		$window.resize(function(){
